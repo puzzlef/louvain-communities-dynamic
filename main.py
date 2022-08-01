@@ -1,7 +1,7 @@
-# https://www.kaggle.com/wolfram77/puzzlef-louvain-adjust-tolerance-iteratively
+# https://www.kaggle.com/wolfram77/puzzlef-louvain-dynamic-naive-approaches
 import os
 from IPython.display import FileLink
-src="louvain-adjust-tolerance-iteratively"
+src="louvain-dynamic-naive-approaches"
 inp="/kaggle/input/graphs"
 out="{}.txt".format(src)
 !printf "" > "$out"

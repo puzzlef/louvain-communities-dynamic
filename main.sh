@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-src="louvain-adjust-tolerance-iteratively"
+src="louvain-dynamic-naive-approaches"
 out="/home/resources/Documents/subhajit/$src.log"
 ulimit -s unlimited
 printf "" > "$out"
