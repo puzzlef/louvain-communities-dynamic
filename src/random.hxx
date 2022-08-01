@@ -8,9 +8,8 @@ using std::uniform_real_distribution;
 // ADD-RANDOM-EDGE
 // ---------------
 
-template <class G, class R, class V, class FE>
-bool addRandomEdge(const G& x, R& rnd, size_t span, V w, FE fe) {
-  using K = typename G::key_type;
+template <class G, class R, class K, class V, class FE>
+bool addRandomEdge(const G& x, R& rnd, K span, V w, FE fe) {
   uniform_real_distribution<> dis(0.0, 1.0);
   K u = K(dis(rnd) * span);
   K v = K(dis(rnd) * span);
@@ -18,16 +17,15 @@ bool addRandomEdge(const G& x, R& rnd, size_t span, V w, FE fe) {
   return true;
 }
 
-template <class G, class R, class V>
-bool addRandomEdge(G& a, R& rnd, size_t span, V w) {
+template <class G, class R, class K, class V>
+bool addRandomEdge(G& a, R& rnd, K span, V w) {
   auto fe = [&](auto u, auto v, auto w) { a.addEdge(u, v, w); };
   return addRandomEdge(a, rnd, span, w, fe);
 }
 
 
-template <class G, class R, class V, class FE>
-bool addRandomEdgeByDegree(const G& x, R& rnd, size_t span, V w, FE fe) {
-  using K = typename G::key_type;
+template <class G, class R, class K, class V, class FE>
+bool addRandomEdgeByDegree(const G& x, R& rnd, K span, V w, FE fe) {
   uniform_real_distribution<> dis(0.0, 1.0);
   double deg = x.size() / x.span();
   K un = K(dis(rnd) * deg * span);
@@ -45,8 +43,8 @@ bool addRandomEdgeByDegree(const G& x, R& rnd, size_t span, V w, FE fe) {
   return true;
 }
 
-template <class G, class R, class V>
-bool addRandomEdgeByDegree(G& a, R& rnd, size_t span, V w) {
+template <class G, class R, class K, class V>
+bool addRandomEdgeByDegree(G& a, R& rnd, K span, V w) {
   auto fe = [&](auto u, auto v, auto w) { a.addEdge(u, v, w); };
   return addRandomEdgeByDegree(a, rnd, span, w, fe);
 }

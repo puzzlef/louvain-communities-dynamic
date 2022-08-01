@@ -11,7 +11,7 @@ using namespace std;
 
 
 template <class G, class K, class V>
-void getModularity(const G& x, const LouvainResult<K>& a, V M) {
+double getModularity(const G& x, const LouvainResult<K>& a, V M) {
   auto fc = [&](auto u) { return a.membership[u]; };
   return modularity(x, fc, M, V(1));
 }
@@ -35,36 +35,42 @@ void runLouvain(const G& x, int repeat) {
 
   // Get last pass community memberships (static).
   LouvainResult<K> al = louvainSeq(x, init, {repeat, resolution, tolerance, passTolerance, toleranceDeclineFactor});
-  printf("[%1.1e batch_size; %d batch_count; %09.3f ms; %04d iters.; %03d passes; %01.9f modularity] louvainSeqLast\n", 0.0, 0, al.time, al.iterations, al.passes, getModularity(x, al, M), tolerance, toleranceDeclineFactor);
+  printf("[%1.0e batch_size; %d batch_count; %09.3f ms; %04d iters.; %03d passes; %01.9f modularity] louvainSeqLast\n", 0.0, 0, al.time, al.iterations, al.passes, getModularity(x, al, M), tolerance, toleranceDeclineFactor);
   // Get first pass community memberships (static).
   LouvainResult<K> af = louvainSeq(x, init, {repeat, resolution, tolerance, passTolerance, toleranceDeclineFactor, 500, 1});
-  printf("[%1.1e batch_size; %d batch_count; %09.3f ms; %04d iters.; %03d passes; %01.9f modularity] louvainSeqLast\n", 0.0, 0, af.time, af.iterations, af.passes, getModularity(x, af, M), tolerance, toleranceDeclineFactor);
+  printf("[%1.0e batch_size; %d batch_count; %09.3f ms; %04d iters.; %03d passes; %01.9f modularity] louvainSeqFirst\n", 0.0, 0, af.time, af.iterations, af.passes, getModularity(x, af, M), tolerance, toleranceDeclineFactor);
   // Batch of additions only (dynamic).
   for (int batchSize=500, i=0; batchSize<=100000; batchSize*=i&1? 5:2, ++i) {
     for (int batchCount=1; batchCount<=5; ++batchCount) {
       auto y  = duplicate(x);
-      auto fe = [&](auto u, auto v, auto w) { y.addEdge(u, v, w); };
+      auto fe = [&](auto u, auto v, auto w) {
+        y.addEdge(u, v, w);
+        y.addEdge(v, u, w);
+      };
       for (int i=0; i<batchSize; ++i)
         retry([&]() { return addRandomEdge(y, rnd, x.span(), V(1), fe); }, retries);
       y.correct();
       LouvainResult<K> bl = louvainSeq(y, &al.membership, {repeat, resolution, tolerance, passTolerance, toleranceDeclineFactor});
-      printf("[%1.1e batch_size; %d batch_count; %09.3f ms; %04d iters.; %03d passes; %01.9f modularity] louvainSeqDynamicLast\n", double(batchSize), batchCount, bl.time, bl.iterations, bl.passes, getModularity(y, bl, M), tolerance, toleranceDeclineFactor);
+      printf("[%1.0e batch_size; %d batch_count; %09.3f ms; %04d iters.; %03d passes; %01.9f modularity] louvainSeqDynamicLast\n", double(batchSize), batchCount, bl.time, bl.iterations, bl.passes, getModularity(y, bl, M), tolerance, toleranceDeclineFactor);
       LouvainResult<K> bf = louvainSeq(y, &af.membership, {repeat, resolution, tolerance, passTolerance, toleranceDeclineFactor});
-      printf("[%1.1e batch_size; %d batch_count; %09.3f ms; %04d iters.; %03d passes; %01.9f modularity] louvainSeqDynamicLast\n", double(batchSize), batchCount, bf.time, bf.iterations, bf.passes, getModularity(y, bf, M), tolerance, toleranceDeclineFactor);
+      printf("[%1.0e batch_size; %d batch_count; %09.3f ms; %04d iters.; %03d passes; %01.9f modularity] louvainSeqDynamicFirst\n", double(batchSize), batchCount, bf.time, bf.iterations, bf.passes, getModularity(y, bf, M), tolerance, toleranceDeclineFactor);
     }
   }
   // Batch of deletions only (dynamic).
   for (int batchSize=500, i=0; batchSize<=100000; batchSize*=i&1? 5:2, ++i) {
     for (int batchCount=1; batchCount<=5; ++batchCount) {
       auto y  = duplicate(x);
-      auto fe = [&](auto u, auto v) { y.removeEdge(u, v); };
+      auto fe = [&](auto u, auto v) {
+        y.removeEdge(u, v);
+        y.removeEdge(v, u);
+      };
       for (int i=0; i<batchSize; ++i)
-        retry([&]() { return removeRandomEdge(y, rnd, x.span(), fe); }, retries);
+        retry([&]() { return removeRandomEdge(y, rnd, fe); }, retries);
       y.correct();
       LouvainResult<K> bl = louvainSeq(y, &al.membership, {repeat, resolution, tolerance, passTolerance, toleranceDeclineFactor});
-      printf("[%1.1e batch_size; %d batch_count; %09.3f ms; %04d iters.; %03d passes; %01.9f modularity] louvainSeqDynamicLast\n", double(-batchSize), batchCount, bl.time, bl.iterations, bl.passes, getModularity(y, bl, M), tolerance, toleranceDeclineFactor);
+      printf("[%1.0e batch_size; %d batch_count; %09.3f ms; %04d iters.; %03d passes; %01.9f modularity] louvainSeqDynamicLast\n", double(-batchSize), batchCount, bl.time, bl.iterations, bl.passes, getModularity(y, bl, M), tolerance, toleranceDeclineFactor);
       LouvainResult<K> bf = louvainSeq(y, &af.membership, {repeat, resolution, tolerance, passTolerance, toleranceDeclineFactor});
-      printf("[%1.1e batch_size; %d batch_count; %09.3f ms; %04d iters.; %03d passes; %01.9f modularity] louvainSeqDynamicLast\n", double(-batchSize), batchCount, bf.time, bf.iterations, bf.passes, getModularity(y, bf, M), tolerance, toleranceDeclineFactor);
+      printf("[%1.0e batch_size; %d batch_count; %09.3f ms; %04d iters.; %03d passes; %01.9f modularity] louvainSeqDynamicFirst\n", double(-batchSize), batchCount, bf.time, bf.iterations, bf.passes, getModularity(y, bf, M), tolerance, toleranceDeclineFactor);
     }
   }
 }
