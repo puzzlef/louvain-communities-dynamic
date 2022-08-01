@@ -216,12 +216,11 @@ void louvainLookupCommunities(vector<K>& a, const vector<K>& vcom) {
 }
 
 
-template <class G, class V=float>
-auto louvainSeq(const G& x, LouvainOptions<V> o={}) {
-  using K = typename G::key_type;
+template <class G, class K, class V=float>
+auto louvainSeq(const G& x, const vector<K>* q=nullptr, LouvainOptions<V> o={}) {
   V   R = o.resolution;
   V   D = o.passTolerance;
-  int L = o.maxIterations,      l = 0;
+  int L = o.maxIterations, l = 0;
   int P = o.maxPasses, p = 0;
   V   M = edgeWeight(x)/2;
   size_t S = x.span();
@@ -236,7 +235,9 @@ auto louvainSeq(const G& x, LouvainOptions<V> o={}) {
     fillValueU(ctot, V());
     mark([&]() {
       louvainVertexWeights(vtot, y);
-      louvainInitialize(vcom, ctot, y, vtot);
+      if (q) copyValues(*q, vcom);
+      if (q) louvainCommunityWeights(ctot, y, vcom, vtot);
+      else   louvainInitialize(vcom, ctot, y, vtot);
       copyValues(vcom, a);
       for (l=0, p=0; p<P;) {
         l += louvainMove(vcom, ctot, vcs, vcout, y, vtot, M, R, E, L);
