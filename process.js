@@ -3,9 +3,9 @@ const os = require('os');
 const path = require('path');
 
 const RGRAPH = /^Loading graph .*\/(.*?)\.mtx \.\.\./m;
-const RORDER = /^order: (\d+) size: (\d+) (?:\[\w+\] )?\{\} \(selfLoopAllVertices\)/m;
+const RORDER = /^order: (\d+) size: (\d+) (?:\[\w+\] )?\{\} \(symmetricize\)/m;
 const RORGNL = /^\[(\S+?) modularity\] noop/;
-const RRESLT = /^\[(\S+?) ms; (\d+) iters\.; (\d+) passes; (\S+?) modularity\] louvainSeq \{tolerance: (\S+?), tol_dec_factor: (\S+?)\}/m;
+const RRESLT = /^\[(\S+?) batch_size; (\d+) batch_count; (\S+?) ms; (\d+) iters\.; (\d+) passes; (\S+?) modularity\] (\w+)/m;
 
 
 
@@ -57,23 +57,25 @@ function readLogLine(ln, data, state) {
   else if (RORGNL.test(ln)) {
     var [, modularity] = RORGNL.exec(ln);
     data.get(state.graph).push(Object.assign({}, state, {
-      time:                     0,
-      iterations:               0,
-      passes:                   0,
-      modularity:               parseFloat(modularity),
-      tolerance:                0,
-      tolerance_decline_factor: 0,
+      batch_size:  0,
+      batch_count: 0,
+      time:        0,
+      iterations:  0,
+      passes:      0,
+      modularity:  parseFloat(modularity),
+      technique:   'noop',
     }));
   }
   else if (RRESLT.test(ln)) {
-    var [, time, iterations, passes, modularity, tolerance, tolerance_decline_factor] = RRESLT.exec(ln);
+    var [, batch_size, batch_count, time, iterations, passes, modularity, technique] = RRESLT.exec(ln);
     data.get(state.graph).push(Object.assign({}, state, {
-      time:                     parseFloat(time),
-      iterations:               parseFloat(iterations),
-      passes:                   parseFloat(passes),
-      modularity:               parseFloat(modularity),
-      tolerance:                parseFloat(tolerance),
-      tolerance_decline_factor: parseFloat(tolerance_decline_factor),
+      batch_size:  parseFloat(batch_size),
+      batch_count: parseFloat(batch_count),
+      time:        parseFloat(time),
+      iterations:  parseFloat(iterations),
+      passes:      parseFloat(passes),
+      modularity:  parseFloat(modularity),
+      technique,
     }));
   }
   return state;
