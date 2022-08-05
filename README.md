@@ -1,4 +1,4 @@
-Effect of iteratively adjusting tolerance of the Louvain algorithm for community
+Comparing naive dynamic approaches of the Louvain algorithm for community
 detection.
 
 [Louvain] is an algorithm for **detecting communities in graphs**. *Community*
@@ -52,27 +52,49 @@ thing does not apply for `tolerance`. Adjusting values of `tolerance` between
 each pass have been observed to impact the runtime of the algorithm, without
 significantly affecting the modularity of obtained communities.
 
-In this experiment we adjust `tolerance` in two different ways. First, we change
-the initial value of `tolerance` from `1e-00` to `1e-12` in steps of `10`. For
-each initial value of `tolerance`, we adjust the rate at which we decline
-tolerance between each pass (`toleranceDeclineFactor`) from `10` to `10000`. We
-compare the results, both in terms of quality (modularity) of communities
-obtained, and performance. We choose the remaining Louvain *parameters* as
-`resolution = 1.0` and `passTolerance = 0.0`. In addition we limit the maximum
-number of iterations in a single local-moving phase with `maxIterations = 500`,
-and limit the maximum number of passes with `maxPasses = 500`. We run the
-Louvain algorithm until convergence (or until the maximum limits are exceeded),
-and measure the **time** **taken** for the *computation* (performed 5 times for
-averaging), the **modularity score**, the **total number of iterations** (in the
-*local-moving* *phase*), and the number of **passes**. This is repeated for
-*seventeen* different graphs.
+In this experiment, we compare the performance of *two different types* of **naive**
+**dynamic Louvain** with respect to the *static* version. The **last** approach
+(`louvainSeqDynamicLast`) considers the community membership of each vertex
+*after* the Louvain algorithm has *converged* (community membership from the "last"
+pass) and then performs the Louvain algorithm upon the new (updated) graph. This
+is *similar* to naive dynamic approaches with other algorithms. On the other hand,
+the **first** approach (`louvainSeqDynamicFirst`) considers the community
+membership of each vertex right after the *first pass* of the Louvain algorithm
+(this is the first community membership hierarchy) and then performs the Louvain
+algorithm upon the updated graph. With this approach, we allow the affected
+vertices to choose their community membership from the first pass itself, which
+which to my intuition would lead to better communities.
 
-From the results, we observe that an initial **tolerance** of `1e-2` yields
-communities with the best possible modularity while requiring the least
-computation time. In addition, increasing the `toleranceDeclineFactor`
-increases the computation time (as expected), but does not seem to impact
-resulting modularity. Therefore choosing a **toleranceDeclineFactor** of `10`
-would be a good idea.
+First, we compute the community membership of each vertex using the static
+Louvain algorithm (`louvainSeqLast`). We also run the static Louvain algorithm
+for only one pass (`louvainSeqFirst`). We then generate *batches* of *insertions*
+*(+)* and *deletions (-)* of edges of sizes 500, 1000, 5000, ... 100000. For each
+batch size, we generate *five* different batches for the purpose of *averaging*.
+Each batch of edges (insertion / deletion) is generated randomly such that the
+selection of each vertex (as endpoint) is *equally probable*. We choose the
+Louvain *parameters* as `resolution = 1.0`, `tolerance = 1e-2` (for local-moving
+phase) with *tolerance* decreasing after every pass by a factor of
+`toleranceDeclineFactor = 10`, and a `passTolerance = 0.0` (when passes stop).
+In addition we limit the maximum number of iterations in a single local-moving
+phase with `maxIterations = 500`, and limit the maximum number of passes with
+`maxPasses = 500`. We run the Louvain algorithm until convergence (or until the
+maximum limits are exceeded), and measure the **time** **taken** for the
+*computation* (performed 5 times for averaging), the **modularity score**, the
+**total number of iterations** (in the *local-moving* *phase*), and the number
+of **passes**. This is repeated for *seventeen* different graphs.
+
+From the results, we make make the following observations. The performance of
+dynamic approaches upon a batch of deletions appears to *increase* with *increasing*
+batch size*. This makes sense since, as the graph keeps getting smaller, the
+computation would complete *sooner*. Next, the `first` naive dynamic approach is
+found to be *significantly slower* (~0.3x speedup) than the `last` approach.
+However, the `first` approach is *still faster* than the static approach upto a
+batch size of `50000`. On the other hand, the `last` approach is *faster* than the
+static approach for all batch sizes. A similar behavior is observed with the
+total number of iterations. The `first` approach seems to have a *slightly higher*
+modularity with respect to the `last` approach. Since the modularity between the
+two dynamic approaches are almost the same, the **last** approach is clearly the
+**best choice**.
 
 All outputs are saved in a [gist] and a small part of the output is listed here.
 Some [charts] are also included below, generated from [sheets]. The input data
@@ -92,28 +114,32 @@ $ ...
 # order: 281903 size: 2312497 [directed] {}
 # order: 281903 size: 3985272 [directed] {} (symmetricize)
 # [-0.000497 modularity] noop
-# [00747.516 ms; 0016 iters.; 009 passes; 0.922466815 modularity] louvainSeq {tolerance: 1.0e+00, tol_dec_factor: 1.0e+01}
-# [00591.458 ms; 0021 iters.; 009 passes; 0.923401713 modularity] louvainSeq {tolerance: 1.0e-01, tol_dec_factor: 1.0e+01}
-# [00616.070 ms; 0025 iters.; 009 passes; 0.923382580 modularity] louvainSeq {tolerance: 1.0e-02, tol_dec_factor: 1.0e+01}
+# [0e+00 batch_size; 0 batch_count; 00792.589 ms; 0025 iters.; 009 passes; 0.923382580 modularity] louvainSeqLast
+# [0e+00 batch_size; 0 batch_count; 00573.409 ms; 0004 iters.; 001 passes; 0.766543329 modularity] louvainSeqFirst
+# [5e+02 batch_size; 1 batch_count; 00224.703 ms; 0004 iters.; 004 passes; 0.914939582 modularity] louvainSeqDynamicLast
+# [5e+02 batch_size; 1 batch_count; 00480.665 ms; 0025 iters.; 009 passes; 0.923243225 modularity] louvainSeqDynamicFirst
+# [5e+02 batch_size; 2 batch_count; 00227.230 ms; 0004 iters.; 004 passes; 0.914955676 modularity] louvainSeqDynamicLast
 # ...
-# [09872.146 ms; 0287 iters.; 009 passes; 0.923316002 modularity] louvainSeq {tolerance: 1.0e-10, tol_dec_factor: 1.0e+04}
-# [09877.723 ms; 0287 iters.; 009 passes; 0.923316002 modularity] louvainSeq {tolerance: 1.0e-11, tol_dec_factor: 1.0e+04}
-# [09907.396 ms; 0287 iters.; 009 passes; 0.923316002 modularity] louvainSeq {tolerance: 1.0e-12, tol_dec_factor: 1.0e+04}
+# [-1e+05 batch_size; 4 batch_count; 00397.172 ms; 0011 iters.; 006 passes; 0.876155496 modularity] louvainSeqDynamicFirst
+# [-1e+05 batch_size; 5 batch_count; 00206.570 ms; 0004 iters.; 004 passes; 0.869377553 modularity] louvainSeqDynamicLast
+# [-1e+05 batch_size; 5 batch_count; 00406.253 ms; 0012 iters.; 006 passes; 0.876216054 modularity] louvainSeqDynamicFirst
 #
 # Loading graph /home/subhajit/data/web-BerkStan.mtx ...
 # order: 685230 size: 7600595 [directed] {}
 # order: 685230 size: 13298940 [directed] {} (symmetricize)
 # [-0.000316 modularity] noop
-# [01299.983 ms; 0017 iters.; 009 passes; 0.934353232 modularity] louvainSeq {tolerance: 1.0e+00, tol_dec_factor: 1.0e+01}
-# [01059.621 ms; 0020 iters.; 009 passes; 0.937566638 modularity] louvainSeq {tolerance: 1.0e-01, tol_dec_factor: 1.0e+01}
-# [01169.751 ms; 0028 iters.; 009 passes; 0.935839474 modularity] louvainSeq {tolerance: 1.0e-02, tol_dec_factor: 1.0e+01}
+# [0e+00 batch_size; 0 batch_count; 01248.049 ms; 0028 iters.; 009 passes; 0.935839474 modularity] louvainSeqLast
+# [0e+00 batch_size; 0 batch_count; 00926.964 ms; 0005 iters.; 001 passes; 0.798873782 modularity] louvainSeqFirst
+# [5e+02 batch_size; 1 batch_count; 00527.935 ms; 0003 iters.; 003 passes; 0.932618558 modularity] louvainSeqDynamicLast
+# [5e+02 batch_size; 1 batch_count; 00884.497 ms; 0025 iters.; 009 passes; 0.935987055 modularity] louvainSeqDynamicFirst
+# [5e+02 batch_size; 2 batch_count; 00529.566 ms; 0003 iters.; 003 passes; 0.932615817 modularity] louvainSeqDynamicLast
 # ...
 ```
 
-[![](https://i.imgur.com/weoGrJ1.png)][sheetp]
-[![](https://i.imgur.com/gdrqi0W.png)][sheetp]
-[![](https://i.imgur.com/l0GiYbN.png)][sheetp]
-[![](https://i.imgur.com/nh1Ifjs.png)][sheetp]
+[![](https://i.imgur.com/HJAS3Di.png)][sheetp]
+[![](https://i.imgur.com/4iQ7CzY.png)][sheetp]
+[![](https://i.imgur.com/E9nDrAI.png)][sheetp]
+[![](https://i.imgur.com/BZGF6Yt.png)][sheetp]
 
 <br>
 <br>
@@ -131,14 +157,14 @@ $ ...
 <br>
 <br>
 
-[![](https://i.imgur.com/Pylv6Gc.jpg)](http://www.youtube.com/watch?v=m8fPyvA0QRE)<br>
+[![](https://i.imgur.com/9HITKSz.jpg)](https://www.youtube.com/watch?v=wCUV6N4Qtew&t=447s)<br>
 
 
 [Prof. Dip Sankar Banerjee]: https://sites.google.com/site/dipsankarban/
 [Prof. Kishore Kothapalli]: https://faculty.iiit.ac.in/~kkishore/
 [SuiteSparse Matrix Collection]: https://sparse.tamu.edu
 [Louvain]: https://en.wikipedia.org/wiki/Louvain_method
-[gist]: https://gist.github.com/wolfram77/75adaf8ef100b304ed52602fd68454b2
-[charts]: https://imgur.com/a/9V03o4o
-[sheets]: https://docs.google.com/spreadsheets/d/1Atv-xPmh7DrizWLT6Zis2OcoaDexNGX6edOqjVQu6f0/edit?usp=sharing
-[sheetp]: https://docs.google.com/spreadsheets/d/e/2PACX-1vRkVmIDWzawEfwjM_JzUnG4Dtomkm9ze7aKEqEuCPree_qzf70npIm27nNXmzuE5QgocZ-XZcYxYSNh/pubhtml
+[gist]: https://gist.github.com/wolfram77/9c1bff3cc327acd80c9e2479ef7c4e57
+[charts]: https://imgur.com/a/3vhRU3c
+[sheets]: https://docs.google.com/spreadsheets/d/189GRfvpTxSMWLrqafHMvHyV7ddaXFZQ0u056MfnO2uU/edit?usp=sharing
+[sheetp]: https://docs.google.com/spreadsheets/d/e/2PACX-1vRrGpRtzagVZCmtPuIUaD03I8SGY2PEZGusNV90ojCgntRbiEg0r8wCp-YiT8A7e8ZqzqQqAJveqGOD/pubhtml
