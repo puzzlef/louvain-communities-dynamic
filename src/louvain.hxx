@@ -9,6 +9,9 @@ using std::move;
 
 
 
+// LOUVAIN-OPTIONS
+// ---------------
+
 template <class T>
 struct LouvainOptions {
   int repeat;
@@ -23,6 +26,11 @@ struct LouvainOptions {
   repeat(repeat), resolution(resolution), tolerance(tolerance), passTolerance(passTolerance), tolerenceDeclineFactor(tolerenceDeclineFactor), maxIterations(maxIterations), maxPasses(maxPasses) {}
 };
 
+
+
+
+// LOUVAIN-RESULT
+// --------------
 
 template <class K>
 struct LouvainResult {
