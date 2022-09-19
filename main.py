@@ -1,7 +1,7 @@
-# https://www.kaggle.com/wolfram77/puzzlef-louvain-dynamic-naive-approaches
+# https://www.kaggle.com/wolfram77/puzzlef-louvain-static-vs-dynamic
 import os
 from IPython.display import FileLink
-src="louvain-dynamic-naive-approaches"
+src="louvain-static-vs-dynamic"
 inp="/kaggle/input/graphs"
 out="{}.txt".format(src)
 !printf "" > "$out"

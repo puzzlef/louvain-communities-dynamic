@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-src="louvain-dynamic-naive-approaches"
+src="louvain-static-vs-dynamic"
 out="/home/resources/Documents/subhajit/$src.log"
 ulimit -s unlimited
 printf "" > "$out"
