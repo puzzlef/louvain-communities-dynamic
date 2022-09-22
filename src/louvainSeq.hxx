@@ -7,7 +7,7 @@
 #include "modularity.hxx"
 #include "louvain.hxx"
 
-using std::pair;
+using std::tuple;
 using std::vector;
 
 
@@ -77,8 +77,8 @@ inline auto louvainSeqStatic(const G& x, const vector<K>* q=nullptr, const Louva
 // LOUVAIN-SEQ-DYNAMIC
 // -------------------
 
-template <class G, class K, class V=float>
-inline auto louvainSeqDynamic(const G& x, const vector<pair<K, K>>& deletions, const vector<pair<K, K>>& insertions, const vector<K>* q, const LouvainOptions<V>& o={}) {
+template <class G, class K, class V>
+inline auto louvainSeqDynamic(const G& x, const vector<tuple<K, K>>& deletions, const vector<tuple<K, K, V>>& insertions, const vector<K>* q, const LouvainOptions<V>& o={}) {
   K S = x.span();
   V R = o.resolution;
   V M = edgeWeight(x)/2;
@@ -86,7 +86,7 @@ inline auto louvainSeqDynamic(const G& x, const vector<pair<K, K>>& deletions, c
   vector<V> vtot(S), ctot(S);
   louvainVertexWeights(vtot, x);
   louvainCommunityWeights(ctot, x, vcom, vtot);
-  auto vaff = louvainAffectedVertices(x, deletions, insertions, vcom, vtot, ctot, M, R);
+  auto vaff = louvainAffectedVerticesDeltaScreening(x, deletions, insertions, vcom, vtot, ctot, M, R);
   auto fa   = [&](auto u) { return vaff[u]==true; };
   return louvainSeq(x, q, o, fa);
 }

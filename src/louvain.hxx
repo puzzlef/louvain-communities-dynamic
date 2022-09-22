@@ -29,7 +29,7 @@ struct LouvainOptions {
   int maxIterations;
   int maxPasses;
 
-  LouvainOptions(int repeat=1, T resolution=1, T tolerance=0, T passTolerance=0, T tolerenceDeclineFactor=1, int maxIterations=500, int maxPasses=500) :
+  LouvainOptions(int repeat=1, T resolution=1, T tolerance=1e-2, T passTolerance=0, T tolerenceDeclineFactor=10, int maxIterations=500, int maxPasses=500) :
   repeat(repeat), resolution(resolution), tolerance(tolerance), passTolerance(passTolerance), tolerenceDeclineFactor(tolerenceDeclineFactor), maxIterations(maxIterations), maxPasses(maxPasses) {}
 };
 
@@ -139,7 +139,7 @@ void louvainScanCommunity(vector<K>& vcs, vector<V>& vcout, K u, K v, V w, const
  */
 template <bool SELF=false, class G, class K, class V>
 void louvainScanCommunities(vector<K>& vcs, vector<V>& vcout, const G& x, K u, const vector<K>& vcom) {
-  x.forEachEdge(u, [&](auto v, auto w) { louvainScanCommunity<SELF>(vcs, vcout, x, u, v, w, vcom); });
+  x.forEachEdge(u, [&](auto v, auto w) { louvainScanCommunity<SELF>(vcs, vcout, u, v, w, vcom); });
 }
 
 
@@ -308,8 +308,8 @@ void louvainLookupCommunities(vector<K>& a, const vector<K>& vcom) {
 
 
 
-// LOUVAIN-AFFECTED-VERTICES
-// -------------------------
+// LOUVAIN-AFFECTED-VERTICES-DELTA-SCREENING
+// -----------------------------------------
 // Using delta-screening approach.
 // - All edge batches are undirected, and sorted by source vertex-id.
 // - For edge additions across communities with source vertex `i` and highest modularity changing edge vertex `j*`,
@@ -326,7 +326,7 @@ void louvainLookupCommunities(vector<K>& a, const vector<K>& vcom) {
  * @returns flags for each vertex marking whether it is affected
  */
 template <class G, class K, class V>
-auto louvainAffectedVertices(const G& x, const vector<tuple<K, K>>& deletions, const vector<tuple<K, K>>& insertions, const vector<K>& vcom, const vector<V>& vtot, const vector<V>& ctot, V M, V R=V(1)) {
+auto louvainAffectedVerticesDeltaScreening(const G& x, const vector<tuple<K, K>>& deletions, const vector<tuple<K, K, V>>& insertions, const vector<K>& vcom, const vector<V>& vtot, const vector<V>& ctot, V M, V R=V(1)) {
   K S = x.span();
   vector<K> vcs; vector<V> vcout(S);
   vector<bool> vertices(S), neighbors(S), communities(S);
