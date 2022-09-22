@@ -378,6 +378,7 @@ auto louvainAffectedVerticesDeltaScreening(const G& x, const vector<tuple<K, K>>
 //   `i` is marked as affected.
 // - For edge deletions within the same community `i` and `j`,
 //   `i` is marked as affected.
+// - Vertices whose communities change in local-moving phase have their neighbors marked as affected.
 
 /**
  * Find the vertices which should be processed upon a batch of edge insertions and deletions.

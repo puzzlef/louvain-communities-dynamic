@@ -1,6 +1,7 @@
 #pragma once
 #include <utility>
 #include <vector>
+#include <algorithm>
 #include "_main.hxx"
 #include "properties.hxx"
 #include "duplicate.hxx"
@@ -9,6 +10,7 @@
 
 using std::tuple;
 using std::vector;
+using std::min;
 
 
 
@@ -35,9 +37,9 @@ auto louvainSeq(const G& x, const vector<K>* q, const LouvainOptions<V>& o, FA f
     fillValueU(ctot, V());
     mark([&]() {
       louvainVertexWeights(vtot, y);
-      if (q) copyValues(*q, vcom);
+      louvainInitialize(vcom, ctot, y, vtot);
+      if (q) copyValues(*q, vcom, 0, min((*q).size(), vcom.size()));
       if (q) louvainCommunityWeights(ctot, y, vcom, vtot);
-      else   louvainInitialize(vcom, ctot, y, vtot);
       copyValues(vcom, a);
       for (l=0, p=0; p<P;) {
         if (p==0) l += louvainMove(vcom, ctot, vcs, vcout, y, vtot, M, R, E, L, fa, fp);
