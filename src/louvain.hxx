@@ -244,42 +244,13 @@ auto louvainCommunityVertices(const G& x, const vector<K>& vcom) {
  * @param vcom community each vertex belongs to
  */
 template <class G, class K>
-void louvainAggregateOld(G& a, const G& x, const vector<K>& vcom) {
-  using V = typename G::edge_value_type;
-  OrderedOutDiGraph<K, NONE, V> b;
-  x.forEachVertexKey([&](auto u) {
-    K c = vcom[u];
-    b.addVertex(c);
-  });
-  x.forEachVertexKey([&](auto u) {
-    K c = vcom[u];
-    x.forEachEdge(u, [&](auto v, auto w) {
-      K d = vcom[v];
-      if (!b.hasEdge(c, d)) b.addEdge(c, d, w);
-      else b.setEdgeValue(c, d, w + b.edgeValue(c, d));
-    });
-  });
-  duplicateW(a, b);
-}
-template <class G, class K>
-auto louvainAggregateOld(const G& x, const vector<K>& vcom) {
-  G a; louvainAggregateOld(a, x, vcom);
-  return a;
-}
-
-
-/**
- * Louvain algorithm's community aggregation phase.
- * @param a output graph
- * @param x original graph
- * @param vcom community each vertex belongs to
- */
-template <class G, class K>
 void louvainAggregate(G& a, const G& x, const vector<K>& vcom) {
   using V = typename G::edge_value_type;
-  vector<K> vcs; vector<V> vcout;
+  K S = x.span();
+  vector<K> vcs; vector<V> vcout(S);
   auto comv = louvainCommunityVertices(x, vcom);
   for (K c=0; c<comv.size(); ++c) {
+    if (comv[c].empty()) continue;
     louvainClearScan(vcs, vcout);
     for (K u : comv[c])
       louvainScanCommunities<true>(vcs, vcout, x, u, vcom);
@@ -287,6 +258,7 @@ void louvainAggregate(G& a, const G& x, const vector<K>& vcom) {
     for (auto d : vcs)
       a.addEdge(c, d, vcout[d]);
   }
+  a.correct();
 }
 template <class G, class K>
 auto louvainAggregate(const G& x, const vector<K>& vcom) {

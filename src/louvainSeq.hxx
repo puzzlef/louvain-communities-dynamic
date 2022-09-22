@@ -40,10 +40,9 @@ auto louvainSeq(const G& x, const vector<K>* q=nullptr, LouvainOptions<V> o={}) 
       copyValues(vcom, a);
       for (l=0, p=0; p<P;) {
         l += louvainMove(vcom, ctot, vcs, vcout, y, vtot, M, R, E, L);
-        y  = louvainAggregateOld(y, vcom); ++p;
+        y  = louvainAggregate(y, vcom); ++p;
         louvainLookupCommunities(a, vcom);
         V Q = modularity(y, M, R);
-        V M = edgeWeight(y)/2;
         if (Q-Q0<=D) break;
         fillValueU(vcom, K());
         fillValueU(vtot, V());
