@@ -7,7 +7,9 @@
 #include "modularity.hxx"
 
 using std::pair;
+using std::tuple;
 using std::vector;
+using std::get;
 using std::move;
 using std::make_pair;
 
@@ -110,6 +112,24 @@ void louvainInitialize(vector<K>& vcom, vector<V>& ctot, const G& x, const vecto
 // ------------------------
 
 /**
+ * Scan an edge community connected to a vertex.
+ * @param vcs communities vertex u is linked to (updated)
+ * @param vcout total edge weight from vertex u to community C (updated)
+ * @param u given vertex
+ * @param v outgoing edge vertex
+ * @param w outgoing edge weight
+ * @param vcom community each vertex belongs to
+ */
+template <bool SELF=false, class K, class V>
+void louvainScanCommunity(vector<K>& vcs, vector<V>& vcout, K u, K v, V w, const vector<K>& vcom) {
+  if (!SELF && u==v) return;
+  K c = vcom[v];
+  if (!vcout[c]) vcs.push_back(c);
+  vcout[c] += w;
+}
+
+
+/**
  * Scan communities connected to a vertex.
  * @param vcs communities vertex u is linked to (updated)
  * @param vcout total edge weight from vertex u to community C (updated)
@@ -119,12 +139,7 @@ void louvainInitialize(vector<K>& vcom, vector<V>& ctot, const G& x, const vecto
  */
 template <bool SELF=false, class G, class K, class V>
 void louvainScanCommunities(vector<K>& vcs, vector<V>& vcout, const G& x, K u, const vector<K>& vcom) {
-  x.forEachEdge(u, [&](auto v, auto w) {
-    if (!SELF && u==v) return;
-    K c = vcom[v];
-    if (!vcout[c]) vcs.push_back(c);
-    vcout[c] += w;
-  });
+  x.forEachEdge(u, [&](auto v, auto w) { louvainScanCommunity<SELF>(vcs, vcout, x, u, v, w, vcom); });
 }
 
 
@@ -311,17 +326,25 @@ void louvainLookupCommunities(vector<K>& a, const vector<K>& vcom) {
  * @returns flags for each vertex marking whether it is affected
  */
 template <class G, class K, class V>
-auto louvainAffectedVertices(const G& x, const vector<pair<K, K>>& deletions, const vector<pair<K, K>>& insertions, const vector<K>& vcom, const vector<V>& vtot, const vector<V>& ctot, V M, V R=V(1)) {
+auto louvainAffectedVertices(const G& x, const vector<tuple<K, K>>& deletions, const vector<tuple<K, K>>& insertions, const vector<K>& vcom, const vector<V>& vtot, const vector<V>& ctot, V M, V R=V(1)) {
   K S = x.span();
   vector<K> vcs; vector<V> vcout(S);
   vector<bool> vertices(S), neighbors(S), communities(S);
   for (const auto& [u, v] : deletions) {
+    if (vcom[u] != vcom[v]) continue;
     vertices[u]  = true;
     neighbors[u] = true;
     communities[vcom[v]] = true;
   }
-  for (const auto& [u, _] : insertions) {
+  for (size_t i=0; i<insertions.size();) {
+    K u = get<0>(insertions[i]);
     louvainClearScan(vcs, vcout);
+    for (; i<insertions.size() && get<0>(insertions[i])==u; ++i) {
+      K v = get<1>(insertions[i]);
+      V w = get<2>(insertions[i]);
+      if (vcom[u] == vcom[v]) continue;
+      louvainScanCommunity(vcs, vcout, u, v, w, vcom);
+    }
     auto [c, e] = louvainChooseCommunity(x, u, vcom, vtot, ctot, vcs, vcout, M, R);
     vertices[u]  = true;
     neighbors[u] = true;
