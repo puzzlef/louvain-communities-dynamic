@@ -202,15 +202,17 @@ void louvainChangeCommunity(vector<K>& vcom, vector<V>& ctot, const G& x, K u, K
  * @param R resolution (0, 1]
  * @param E tolerance
  * @param L max iterations
+ * @param fa is a vertex affected?
  * @returns iterations performed
  */
-template <class G, class K, class V>
-int louvainMove(vector<K>& vcom, vector<V>& ctot, vector<K>& vcs, vector<V>& vcout, const G& x, const vector<V>& vtot, V M, V R, V E, int L) {
+template <class G, class K, class V, class FA>
+int louvainMove(vector<K>& vcom, vector<V>& ctot, vector<K>& vcs, vector<V>& vcout, const G& x, const vector<V>& vtot, V M, V R, V E, int L, FA fa) {
   K S = x.span();
   int l = 0; V Q = V();
   for (; l<L;) {
     V el = V();
     x.forEachVertexKey([&](auto u) {
+      if (!fa(u)) return;
       louvainClearScan(vcs, vcout);
       louvainScanCommunities(vcs, vcout, x, u, vcom);
       auto [c, e] = louvainChooseCommunity(x, u, vcom, vtot, ctot, vcs, vcout, M, R);
@@ -220,6 +222,11 @@ int louvainMove(vector<K>& vcom, vector<V>& ctot, vector<K>& vcs, vector<V>& vco
     if (el<=E) break;
   }
   return l;
+}
+template <class G, class K, class V>
+inline int louvainMove(vector<K>& vcom, vector<V>& ctot, vector<K>& vcs, vector<V>& vcout, const G& x, const vector<V>& vtot, V M, V R, V E, int L) {
+  auto fa = [](auto u) { return true; };
+  return louvainMove(vcom, ctot, vcs, vcout, x, vtot, M, R, E, L, fa);
 }
 
 
@@ -261,7 +268,7 @@ void louvainAggregate(G& a, const G& x, const vector<K>& vcom) {
   a.correct();
 }
 template <class G, class K>
-auto louvainAggregate(const G& x, const vector<K>& vcom) {
+inline auto louvainAggregate(const G& x, const vector<K>& vcom) {
   G a; louvainAggregate(a, x, vcom);
   return a;
 }
