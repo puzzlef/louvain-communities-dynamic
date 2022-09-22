@@ -218,10 +218,11 @@ void louvainChangeCommunity(vector<K>& vcom, vector<V>& ctot, const G& x, K u, K
  * @param E tolerance
  * @param L max iterations
  * @param fa is a vertex affected?
+ * @param fp process vertices whose communities have changed
  * @returns iterations performed
  */
-template <class G, class K, class V, class FA>
-int louvainMove(vector<K>& vcom, vector<V>& ctot, vector<K>& vcs, vector<V>& vcout, const G& x, const vector<V>& vtot, V M, V R, V E, int L, FA fa) {
+template <class G, class K, class V, class FA, class FP>
+int louvainMove(vector<K>& vcom, vector<V>& ctot, vector<K>& vcs, vector<V>& vcout, const G& x, const vector<V>& vtot, V M, V R, V E, int L, FA fa, FP fp) {
   K S = x.span();
   int l = 0; V Q = V();
   for (; l<L;) {
@@ -231,12 +232,17 @@ int louvainMove(vector<K>& vcom, vector<V>& ctot, vector<K>& vcs, vector<V>& vco
       louvainClearScan(vcs, vcout);
       louvainScanCommunities(vcs, vcout, x, u, vcom);
       auto [c, e] = louvainChooseCommunity(x, u, vcom, vtot, ctot, vcs, vcout, M, R);
-      if (c)        louvainChangeCommunity(vcom, ctot, x, u, c, vtot);
+      if (c)      { louvainChangeCommunity(vcom, ctot, x, u, c, vtot); fp(u); }
       el += e;  // l1-norm
     }); ++l;
     if (el<=E) break;
   }
   return l;
+}
+template <class G, class K, class V, class FA>
+inline int louvainMove(vector<K>& vcom, vector<V>& ctot, vector<K>& vcs, vector<V>& vcout, const G& x, const vector<V>& vtot, V M, V R, V E, int L, FA fa) {
+  auto fp = [](auto u) {};
+  return louvainMove(vcom, ctot, vcs, vcout, x, vtot, M, R, E, L, fa, fp);
 }
 template <class G, class K, class V>
 inline int louvainMove(vector<K>& vcom, vector<V>& ctot, vector<K>& vcs, vector<V>& vcout, const G& x, const vector<V>& vtot, V M, V R, V E, int L) {
@@ -320,9 +326,13 @@ void louvainLookupCommunities(vector<K>& a, const vector<K>& vcom) {
 /**
  * Find the vertices which should be processed upon a batch of edge insertions and deletions.
  * @param x original graph
- * @param vcom community each vertex belongs to
  * @param deletions edge deletions for this batch update (undirected, sorted by source vertex id)
  * @param insertions edge insertions for this batch update (undirected, sorted by source vertex id)
+ * @param vcom community each vertex belongs to
+ * @param vtot total edge weight of each vertex
+ * @param ctot total edge weight of each community
+ * @param M total weight of "undirected" graph (1/2 of directed graph)
+ * @param R resolution (0, 1]
  * @returns flags for each vertex marking whether it is affected
  */
 template <class G, class K, class V>
@@ -354,5 +364,40 @@ auto louvainAffectedVerticesDeltaScreening(const G& x, const vector<tuple<K, K>>
     if (neighbors[u]) x.forEachEdgeKey(u, [&](auto v) { vertices[v] = true; });
     if (communities[vcom[u]]) vertices[u] = true;
   });
+  return vertices;
+}
+
+
+
+
+// LOUVAIN-AFFECTED-VERTICES-FRONTIER
+// ----------------------------------
+// Using frontier based approach.
+// - All source and destination vertices are marked as affected for insertions and deletions.
+// - For edge additions across communities with source vertex `i` and destination vertex `j`,
+//   `i` is marked as affected.
+// - For edge deletions within the same community `i` and `j`,
+//   `i` is marked as affected.
+
+/**
+ * Find the vertices which should be processed upon a batch of edge insertions and deletions.
+ * @param x original graph
+ * @param deletions edge deletions for this batch update (undirected, sorted by source vertex id)
+ * @param insertions edge insertions for this batch update (undirected, sorted by source vertex id)
+ * @param vcom community each vertex belongs to
+ * @returns flags for each vertex marking whether it is affected
+ */
+template <class G, class K, class V>
+auto louvainAffectedVerticesFrontier(const G& x, const vector<tuple<K, K>>& deletions, const vector<tuple<K, K, V>>& insertions, const vector<K>& vcom) {
+  K S = x.span();
+  vector<bool> vertices(S);
+  for (const auto& [u, v] : deletions) {
+    if (vcom[u] != vcom[v]) continue;
+    vertices[u]  = true;
+  }
+  for (const auto& [u, v, w] : insertions) {
+    if (vcom[u] == vcom[v]) continue;
+    vertices[u]  = true;
+  }
   return vertices;
 }
