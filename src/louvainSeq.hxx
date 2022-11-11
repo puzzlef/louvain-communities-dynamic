@@ -47,7 +47,7 @@ auto louvainSeq(const G& x, const vector<K>* q, const LouvainOptions<V>& o, FA f
         l += m; ++p;
         if (m<=1 || p>=P) { louvainLookupCommunities(a, vcom); break; }
         // K N0 = y.order();
-        y = louvainAggregate(y, vcom);
+        y = louvainAggregate(vcs, vcout, y, vcom);
         // K N1 = y.order();
         // if (N1==N0) break;
         louvainLookupCommunities(a, vcom);
