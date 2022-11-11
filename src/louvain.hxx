@@ -106,6 +106,21 @@ void louvainInitialize(vector<K>& vcom, vector<V>& ctot, const G& x, const vecto
 }
 
 
+/**
+ * Initialize communities from given initial communities.
+ * @param vcom community each vertex belongs to (updated, should be initialized to 0)
+ * @param ctot total edge weight of each community (updated, should be initilized to 0)
+ * @param x original graph
+ * @param vtot total edge weight of each vertex
+ * @param q initial community each vertex belongs to
+ */
+template <class G, class K, class V>
+void louvainInitializeFrom(vector<K>& vcom, vector<V>& ctot, const G& x, const vector<V>& vtot, const vector<K>& q) {
+  copyValues(q, vcom, 0, min(q.size(), vcom.size()));
+  louvainCommunityWeights(ctot, y, vcom, vtot);
+}
+
+
 
 
 // LOUVAIN-CHANGE-COMMUNITY
