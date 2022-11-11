@@ -1,4 +1,5 @@
 #include <utility>
+#include <random>
 #include <vector>
 #include <string>
 #include <cstdio>
@@ -13,7 +14,7 @@ using namespace std;
 template <class G, class K, class V>
 double getModularity(const G& x, const LouvainResult<K>& a, V M) {
   auto fc = [&](auto u) { return a.membership[u]; };
-  return modularity(x, fc, M, V(1));
+  return modularityBy(x, fc, M, V(1));
 }
 
 

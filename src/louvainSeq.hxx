@@ -47,13 +47,13 @@ auto louvainSeq(const G& x, const vector<K>* q, const LouvainOptions<V>& o, FA f
         l += m; ++p;
         if (m<=1 || p>=P) { louvainLookupCommunities(a, vcom); break; }
         // K N0 = y.order();
-        y = louvainAggregate(y, vcom); ++p;
+        y = louvainAggregate(y, vcom);
         // K N1 = y.order();
         // if (N1==N0) break;
         louvainLookupCommunities(a, vcom);
-        V Q = D>0? modularity(y, M, R) : Q0 + V(1);
         PRINTFD("louvainSeq(): p=%d, l=%d, m=%d, Q=%f\n", p, l, m, modularity(y, M, R));
-        if (Q-Q0<=D) break;
+        V Q = D? modularity(y, M, R) : V();
+        if (D && Q-Q0<=D) break;
         fillValueU(vcom, K());
         fillValueU(vtot, V());
         fillValueU(ctot, V());
