@@ -154,10 +154,10 @@ $ ...
 # ...
 ```
 
-[![](https://i.imgur.com/M0gLGLc.png)][sheetp]
-[![](https://i.imgur.com/r3hwsPc.png)][sheetp]
-[![](https://i.imgur.com/2cg4fpX.png)][sheetp]
-[![](https://i.imgur.com/pMZIbKL.png)][sheetp]
+[![](https://i.imgur.com/MVFks1a.png)][sheetp]
+[![](https://i.imgur.com/du5qe69.png)][sheetp]
+[![](https://i.imgur.com/AulWzoj.png)][sheetp]
+[![](https://i.imgur.com/bxpYvsF.png)][sheetp]
 
 <br>
 <br>
@@ -185,6 +185,6 @@ $ ...
 [SuiteSparse Matrix Collection]: https://sparse.tamu.edu
 [Louvain]: https://en.wikipedia.org/wiki/Louvain_method
 [gist]: https://gist.github.com/wolfram77/de2c1e1c8f6efb7f4053a122b688c7a7
-[charts]: https://imgur.com/a/0IixyhS
+[charts]: https://imgur.com/a/xcoVmDw
 [sheets]: https://docs.google.com/spreadsheets/d/1U8cdi0Y9i-Pl0SkUdSsuM87Khw0Jn6SCM7u6qlVp--Y/edit?usp=sharing
 [sheetp]: https://docs.google.com/spreadsheets/d/e/2PACX-1vQjZGdwSy2Cd5mojCQgvvl0P5eaZBjJwhIBqcX-RN5MfeFVl9V2o9G4XCjR2_qaH_mpeBSm7eMIhSeQ/pubhtml
